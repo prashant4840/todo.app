@@ -11,12 +11,6 @@ You can:
 - Clear all completed tasks
 - Keep everything saved in `localStorage` so it’s still there after refresh
 
-## How to run
-
-1. Download or clone the project.
-2. Open `index todo.html` in your browser (no backend needed).
-3. Start adding tasks in the input box and press **Enter** or click **+ Add**.
-
 ## Tech / concepts I practiced
 
 - Plain **HTML, CSS, JavaScript** (no frameworks)
