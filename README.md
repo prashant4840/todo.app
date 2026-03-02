@@ -12,7 +12,7 @@ File: todo-app/index.html
 
 Tech Used <br>
 
-	•	HTML5, CSS3, Vanilla JavaScript <br>
-	•	Open-Meteo API (free weather data, no API key required) <br>
-	•	Google Fonts <br>
+	•	HTML5, CSS3, Vanilla JavaScript 
+	•	Open-Meteo API (free weather data, no API key required) 
+	•	Google Fonts 
 	•	Deployment via Vercel 
