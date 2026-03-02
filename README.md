@@ -1,18 +1,32 @@
-I’ve built simple todo web app using just HTML, CSS, and JavaScript — no frameworks, no libraries, nothing complicated. Just open the file in your browser and it works instantly.
+# Taskr – Minimal To‑Do App (Student Project)
 
-⸻
+This is a small to‑do app I built while learning JavaScript and DOM manipulation. I wanted something that looks a bit more “product‑ready” than a basic list, but still simple enough for a first‑year project.
 
-Taskr — To-Do List
+You can:
+- Add new tasks with a priority and category
+- Mark tasks as done / not done
+- Edit tasks by double‑clicking on them
+- Filter by **All / Active / Done / High priority**
+- Reorder tasks by dragging them
+- Clear all completed tasks
+- Keep everything saved in `localStorage` so it’s still there after refresh
 
-A clean and simple to-do app to help you stay organized. You can add tasks, set priorities (High, Medium, Low), and organize them by category. It also supports drag-and-drop reordering, inline editing, filters, and a progress bar to track completion. Your tasks are saved in your browser, so they stay even after refreshing the page.
+## How to run
 
-File: todo-app/index.html
+1. Download or clone the project.
+2. Open `index todo.html` in your browser (no backend needed).
+3. Start adding tasks in the input box and press **Enter** or click **+ Add**.
 
-⸻
+## Tech / concepts I practiced
 
-Tech Used <br>
+- Plain **HTML, CSS, JavaScript** (no frameworks)
+- Working with the **DOM** (creating elements, event listeners)
+- **localStorage** for persistence
+- Basic **state management** with a `tasks` array
+- Simple **animations** and drag‑and‑drop behavior
 
-	•	HTML5, CSS3, Vanilla JavaScript 
-	•	Open-Meteo API (free weather data, no API key required) 
-	•	Google Fonts 
-	•	Deployment via Vercel 
+## Things I’d like to improve later
+
+- Add a search bar to quickly find tasks
+- Sync tasks across devices using a real backend
+- Add user accounts and maybe a simple auth flow
