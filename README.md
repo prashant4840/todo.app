@@ -1,4 +1,4 @@
-# Taskr – Minimal To‑Do App (Student Project)
+# Taskr – Minimal To‑Do App
 
 This is a small to‑do app I built while learning JavaScript and DOM manipulation. I wanted something that looks a bit more “product‑ready” than a basic list, but still simple enough for a first‑year project.
 
