@@ -1,0 +1,244 @@
+// ── State ──────────────────────────────────────────────
+let tasks = JSON.parse(localStorage.getItem('taskr-tasks') || '[]');
+let currentFilter = 'all';
+let selectedCat = 'Personal';
+let dragSrcIdx = null;
+
+// ── Init ──────────────────────────────────────────────
+function init() {
+  // Date
+  const now = new Date();
+  document.getElementById('dateDay').textContent =
+    now.toLocaleDateString('en', { weekday: 'long' });
+  document.getElementById('dateFull').textContent =
+    now.toLocaleDateString('en', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Enter key
+  document.getElementById('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  render();
+}
+
+// ── Save ──────────────────────────────────────────────
+function save() {
+  localStorage.setItem('taskr-tasks', JSON.stringify(tasks));
+}
+
+// ── Add ──────────────────────────────────────────────
+function addTask() {
+  const input = document.getElementById('taskInput');
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+
+  const priority = document.getElementById('prioritySelect').value;
+  tasks.unshift({
+    id: Date.now(),
+    text,
+    done: false,
+    priority,
+    category: selectedCat,
+    created: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  input.value = '';
+  save();
+  render();
+  input.focus();
+}
+
+// ── Toggle ────────────────────────────────────────────
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; save(); render(); }
+}
+
+// ── Delete ────────────────────────────────────────────
+function deleteTask(id) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) {
+    el.classList.add('removing');
+    setTimeout(() => {
+      tasks = tasks.filter(t => t.id !== id);
+      save(); render();
+    }, 280);
+  }
+}
+
+// ── Edit ─────────────────────────────────────────────
+function startEdit(id) {
+  const t = tasks.find(t => t.id === id);
+  if (!t) return;
+  const el = document.querySelector(`[data-id="${id}"] .task-text`);
+  if (!el) return;
+  const orig = t.text;
+  el.innerHTML = `<input class="task-edit-input" value="${orig.replace(/"/g, '&quot;')}" />`;
+  const inp = el.querySelector('input');
+  inp.focus();
+  inp.select();
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { t.text = inp.value.trim() || orig; save(); render(); }
+    if (e.key === 'Escape') render();
+  });
+  inp.addEventListener('blur', () => { t.text = inp.value.trim() || orig; save(); render(); });
+}
+
+// ── Filter ────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ── Category select ───────────────────────────────────
+function selectCat(btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedCat = btn.dataset.cat;
+}
+
+// ── Clear completed ───────────────────────────────────
+function clearCompleted() {
+  tasks = tasks.filter(t => !t.done);
+  save(); render();
+}
+
+// ── Priority color ────────────────────────────────────
+function priorityColor(p) {
+  return p === 'high' ? '#c96a3a' : p === 'medium' ? '#4a7c6f' : '#c8c0b4';
+}
+
+// ── Render ────────────────────────────────────────────
+function render() {
+  const list = document.getElementById('tasksList');
+  const empty = document.getElementById('emptyState');
+  const bottomBar = document.getElementById('bottomBar');
+
+  // Filter
+  let visible = tasks.filter(t => {
+    if (currentFilter === 'active') return !t.done;
+    if (currentFilter === 'done')   return t.done;
+    if (currentFilter === 'high')   return t.priority === 'high';
+    return true;
+  });
+
+  // Summary & progress
+  const total = tasks.length;
+  const done  = tasks.filter(t => t.done).length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('taskSummary').innerHTML =
+    total === 0 ? 'No tasks yet' :
+    `<strong>${done}</strong> of <strong>${total}</strong> completed · <strong>${pct}%</strong>`;
+
+  // Bottom bar
+  const hasDone = tasks.some(t => t.done);
+  bottomBar.style.display = total > 0 ? 'flex' : 'none';
+  document.getElementById('bottomCount').textContent =
+    `${total - done} remaining`;
+
+  // Empty
+  empty.classList.toggle('active', visible.length === 0);
+
+  // Separate active / done
+  const active = visible.filter(t => !t.done);
+  const doneItems = visible.filter(t => t.done);
+
+  let html = '';
+
+  if (active.length) {
+    html += `<div class="tasks-group-label">To Do · ${active.length}</div>`;
+    html += active.map((t, i) => taskHTML(t, tasks.indexOf(t))).join('');
+  }
+  if (doneItems.length) {
+    html += `<div class="tasks-group-label">Completed · ${doneItems.length}</div>`;
+    html += doneItems.map((t, i) => taskHTML(t, tasks.indexOf(t))).join('');
+  }
+
+  list.innerHTML = html;
+
+  // Drag & drop
+  list.querySelectorAll('.task-item').forEach(el => {
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragover',  onDragOver);
+    el.addEventListener('drop',      onDrop);
+    el.addEventListener('dragend',   onDragEnd);
+  });
+}
+
+function taskHTML(t, idx) {
+  const badgeClass = `badge-${t.priority}`;
+  const badgeLabel = t.priority.charAt(0).toUpperCase() + t.priority.slice(1);
+  return `
+    <div class="task-item ${t.done ? 'done' : ''}"
+         data-id="${t.id}" data-idx="${idx}"
+         style="--priority-color: ${priorityColor(t.priority)}"
+         draggable="true">
+      <div class="drag-handle" title="Drag to reorder">⠿</div>
+      <div class="check-wrap" onclick="toggleTask(${t.id})">
+        <div class="check-box"><span class="check-icon"></span></div>
+      </div>
+      <div class="task-body">
+        <div class="task-text" ondblclick="startEdit(${t.id})">${escHtml(t.text)}</div>
+        <div class="task-meta">
+          <span class="task-cat">${t.category}</span>
+          <span class="priority-badge ${badgeClass}">${badgeLabel}</span>
+          <span class="task-time">${t.created}</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="action-btn" onclick="startEdit(${t.id})" title="Edit">✏️</button>
+        <button class="action-btn delete" onclick="deleteTask(${t.id})" title="Delete">✕</button>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Drag & Drop ───────────────────────────────────────
+function onDragStart(e) {
+  dragSrcIdx = parseInt(this.dataset.idx);
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  e.preventDefault();
+  document.querySelectorAll('.task-item').forEach(el => el.classList.remove('drag-over'));
+  this.classList.add('drag-over');
+  e.dataTransfer.dropEffect = 'move';
+}
+function onDrop(e) {
+  e.stopPropagation();
+  const destIdx = parseInt(this.dataset.idx);
+  if (dragSrcIdx !== null && dragSrcIdx !== destIdx) {
+    const moved = tasks.splice(dragSrcIdx, 1)[0];
+    tasks.splice(destIdx, 0, moved);
+    save(); render();
+  }
+}
+function onDragEnd() {
+  document.querySelectorAll('.task-item').forEach(el => {
+    el.classList.remove('dragging', 'drag-over');
+  });
+  dragSrcIdx = null;
+}
+
+// ── Seed demo tasks ───────────────────────────────────
+if (tasks.length === 0) {
+  tasks = [
+    { id: 1, text: 'Review project proposal and send feedback', done: false, priority: 'high',   category: 'Work',     created: '09:00' },
+    { id: 2, text: 'Buy groceries — milk, eggs, bread',         done: false, priority: 'medium', category: 'Shopping', created: '09:15' },
+    { id: 3, text: 'Morning run — 5km',                        done: true,  priority: 'medium', category: 'Health',   created: '07:30' },
+    { id: 4, text: 'Call dentist for appointment',              done: false, priority: 'low',    category: 'Health',   created: '10:00' },
+    { id: 5, text: 'Read 30 pages of current book',            done: true,  priority: 'low',    category: 'Personal', created: '20:00' },
+  ];
+  save();
+}
+
+init();
+
